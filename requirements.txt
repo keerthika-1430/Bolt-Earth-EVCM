@@ -5,3 +5,4 @@ fastapi
 uvicorn[standard]
 pymongo
 python-jose[cryptography]
+bcrypt
