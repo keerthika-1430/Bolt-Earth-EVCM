@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bolt Earth — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --neon: #00f5d4; --neon2: #7b2fff; --bg: #050a0e; --surface: #0d1b2a;
+      --surface2: #112233; --border: rgba(0,245,212,0.15); --text: #e8f4f8;
+      --muted: #5a7a8a; --danger: #ff4b6e; --success: #00f5d4; --warn: #ffd166;
+    }
+    body { background: var(--bg); font-family: 'Exo 2', sans-serif; color: var(--text); min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,245,212,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,212,0.025) 1px, transparent 1px);
+      background-size: 40px 40px; pointer-events: none;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+      background: rgba(5,10,14,0.85);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+    }
+    .nav-brand { display: flex; align-items: center; gap: 8px; }
+    .nav-bolt { font-size: 22px; filter: drop-shadow(0 0 6px var(--neon)); }
+    .nav-name { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 16px; letter-spacing: 2px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .user-badge {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 14px 6px 10px;
+      background: rgba(0,245,212,0.07);
+      border: 1px solid var(--border);
+      border-radius: 20px; font-size: 13px; color: var(--neon);
+    }
+    .logout-btn {
+      padding: 8px 16px; background: transparent; border: 1px solid rgba(255,75,110,0.4);
+      border-radius: 8px; color: var(--danger); font-family: 'Exo 2', sans-serif;
+      font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 1px;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,75,110,0.1); }
+
+    /* ── Layout ── */
+    .page-container { max-width: 1100px; margin: 0 auto; padding: 32px 20px 80px; }
+
+    .welcome-banner {
+      background: linear-gradient(135deg, var(--surface) 0%, rgba(13,27,42,0.8) 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 28px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; position: relative; overflow: hidden;
+    }
+    .welcome-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(0,245,212,0.04), transparent 60%);
+    }
+    .welcome-banner::after {
+      content: '⚡'; position: absolute; right: 24px; top: 50%; transform: translateY(-50%);
+      font-size: 80px; opacity: 0.05;
+    }
+    .welcome-text h1 { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .welcome-text p { color: var(--muted); font-size: 14px; }
+    .station-btn {
+      position: relative; z-index: 1;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--neon), #00bfa0);
+      border: none; border-radius: 10px;
+      font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+      letter-spacing: 1px; color: #050a0e; cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s; white-space: nowrap;
+    }
+    .station-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,245,212,0.3); }
+
+    /* ── Stats row ── */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 20px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .stat-card::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(0,245,212,0.03), transparent); }
+    .stat-icon { font-size: 24px; margin-bottom: 8px; }
+    .stat-number { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: var(--neon); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    /* ── Section title ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-family: 'Orbitron', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; color: var(--neon); }
+    .refresh-btn {
+      padding: 6px 14px; background: transparent; border: 1px solid var(--border);
+      border-radius: 8px; color: var(--muted); font-size: 12px; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .refresh-btn:hover { color: var(--neon); border-color: var(--neon); }
+
+    /* ── Booking card ── */
+    .bookings-grid { display: grid; gap: 14px; margin-bottom: 32px; }
+    .booking-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 24px;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 12px; align-items: start;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeIn 0.4s ease both;
+    }
+    .booking-card:hover { border-color: rgba(0,245,212,0.35); transform: translateX(4px); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .booking-station { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+    .booking-meta { display: flex; flex-wrap: wrap; gap: 10px; }
+    .meta-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500;
+    }
+    .tag-fast { background: rgba(0,245,212,0.1); color: var(--neon); }
+    .tag-slow { background: rgba(123,47,255,0.12); color: #b59dff; }
+    .tag-time { background: rgba(255,209,102,0.1); color: var(--warn); }
+    .tag-cost { background: rgba(0,245,212,0.08); color: var(--muted); }
+    .token-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      background: rgba(0,245,212,0.08);
+      border: 1px solid rgba(0,245,212,0.25);
+      border-radius: 10px;
+      font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--neon); letter-spacing: 2px; white-space: nowrap;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .token-badge:hover { background: rgba(0,245,212,0.15); }
+    .status-confirmed { color: var(--success); }
+
+    /* ── Empty state ── */
+    .empty-state {
+      text-align: center; padding: 48px 20px;
+      background: var(--surface); border: 1px dashed var(--border); border-radius: 16px;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { color: var(--muted); font-size: 14px; }
+
+    /* ── History table ── */
+    .history-table { width: 100%; border-collapse: collapse; }
+    .history-table th {
+      text-align: left; padding: 10px 14px;
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .history-table td {
+      padding: 12px 14px; font-size: 13px;
+      border-bottom: 1px solid rgba(0,245,212,0.06);
+    }
+    .history-table tr:hover td { background: rgba(0,245,212,0.025); }
+
+    /* ── Stations list ── */
+    .stations-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .station-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 18px 20px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .station-card:hover { border-color: rgba(0,245,212,0.3); transform: translateY(-2px); }
+    .station-name { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+    .station-addr { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+    .station-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip { padding: 3px 10px; border-radius: 20px; font-size: 11px; }
+    .chip-avail { background: rgba(0,245,212,0.1); color: var(--neon); }
+    .chip-rating { background: rgba(255,209,102,0.1); color: var(--warn); }
+    /* ── Loading spinner ── */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid var(--border); border-top-color: var(--neon);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      padding: 12px 24px; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 12px; font-size: 13px; color: var(--neon);
+      transition: transform 0.3s; z-index: 999;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 600px) {
+      .welcome-banner { flex-direction: column; gap: 16px; }
+      .booking-card { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="nav-bolt">⚡</span>
+    <span class="nav-name">BOLT EARTH</span>
+  </div>
+  <div class="nav-right">
+    <div class="user-badge">👤 <span id="navUserName">—</span></div>
+    <button class="logout-btn" onclick="logout()">⏻ Logout</button>
+  </div>
+</nav>
+
+<div class="page-container">
+
+  <!-- Welcome banner -->
+  <div class="welcome-banner">
+    <div class="welcome-text">
+      <h1>Hello, <span id="welcomeName">Charging Hero</span> 👋</h1>
+      <p>Your smart EV charging dashboard</p>
+    </div>
+    <div style="display:flex;gap:10px;position:relative;z-index:1"><button class="station-btn" onclick="window.location.href='/nearby-page'" style="background:linear-gradient(135deg,#00d4ff,#0088ff)">📍 Nearby Stations</button></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-number" id="statActive">—</div>
+      <div class="stat-label">Active Bookings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📜</div>
+      <div class="stat-number" id="statTotal">—</div>
+      <div class="stat-label">Total Bookings</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-number" id="statSpent">—</div>
+      <div class="stat-label">Total Spent (₹)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⚡</div>
+      <div class="stat-number" id="statStations">5</div>
+      <div class="stat-label">Stations Nearby</div>
+    </div>
+  </div>
+
+  <!-- Current Bookings -->
+  <div class="section-header">
+    <div class="section-title">📋 Active Bookings</div>
+    <button class="refresh-btn" onclick="loadCurrentBookings()">↻ Refresh</button>
+  </div>
+  <div class="bookings-grid" id="currentBookings">
+    <div style="text-align:center;padding:20px;color:var(--muted)"><div class="spinner"></div></div>
+  </div>
+
+  <!-- Nearby Stations -->
+  <div class="section-header">
+    <div class="section-title">📍 Nearby Stations</div>
+  </div>
+  <div class="stations-grid" id="stationsGrid">
+    <div style="text-align:center;padding:20px;color:var(--muted)"><div class="spinner"></div></div>
+  </div>
+
+  <!-- History -->
+  <div class="section-header">
+    <div class="section-title">📜 Booking History</div>
+    <button class="refresh-btn" onclick="loadHistory()">↻ Refresh</button>
+  </div>
+  <div id="historyContainer" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;padding:8px 0;">
+    <div style="text-align:center;padding:20px;color:var(--muted)"><div class="spinner"></div></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── Auth guard ──
+  const token = sessionStorage.getItem("bolt_token");
+  const user  = JSON.parse(sessionStorage.getItem("bolt_user") || "{}");
+  if (!token) window.location.href = "/login-page";
+
+  // Set user name — use stored value or fetch from /me
+  async function initUserName() {
+    let name = user.full_name || user.name;
+    if (!name && token) {
+      try {
+        const r = await fetch("/me", { headers: { Authorization: "Bearer " + token } });
+        if (r.ok) {
+          const u = await r.json();
+          name = u.full_name || u.name;          // backend returns full_name
+        } else if (r.status === 401) {
+          // Token expired — force re-login
+          sessionStorage.clear();
+          window.location.href = "/login-page";
+          return;
+        }
+      } catch(e) {}
+    }
+    document.getElementById("navUserName").textContent = name || "User";
+    document.getElementById("welcomeName").textContent  = name || "Charging Hero";
+  }
+  initUserName();
+
+  const API = (path, opts = {}) =>
+    fetch(path, { ...opts, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(opts.headers || {}) } });
+
+  function logout() {
+    sessionStorage.clear();
+    window.location.href = "/login-page";
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    setTimeout(() => t.classList.remove("show"), 2500);
+  }
+
+  function copyToken(tok) {
+    navigator.clipboard.writeText(tok).then(() => showToast(`Token ${tok} copied!`));
+  }
+
+  // ── Load current bookings ──
+  async function loadCurrentBookings() {
+    const el = document.getElementById("currentBookings");
+    try {
+      const res = await API("/current-bookings");
+      const data = await res.json();
+      if (!res.ok) { if (res.status === 401) logout(); return; }
+      document.getElementById("statActive").textContent = data.total;
+
+      if (!data.bookings.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔋</div><div class="empty-text">No active bookings yet.<br>Book a slot to get started!</div></div>`;
+        return;
+      }
+
+      el.innerHTML = data.bookings.map(b => `
+        <div class="booking-card">
+          <div>
+            <div class="booking-station">📍 ${b.station_name}</div>
+            <div class="booking-meta">
+              <span class="meta-tag ${b.charging_mode === 'fast' ? 'tag-fast' : 'tag-slow'}">
+                ${b.charging_mode === 'fast' ? '🚀 Fast' : '🐢 Slow'}
+              </span>
+              <span class="meta-tag tag-time">🕐 ${b.slot_time}</span>
+              <span class="meta-tag tag-cost">₹${b.cost} · ${b.duration_min} min</span>
+              <span class="meta-tag" style="background:rgba(0,245,212,0.08);color:var(--success)">✅ ${b.status}</span>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--muted)">Booked: ${b.booked_at}</div>
+          </div>
+          <div class="token-badge" onclick="copyToken('${b.token}')" title="Click to copy">
+            🎫 ${b.token}
+          </div>
+        </div>
+      `).join("");
+    } catch (e) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Could not load bookings</div></div>`;
+    }
+  }
+
+  // ── Load history ──
+  async function loadHistory() {
+    const el = document.getElementById("historyContainer");
+    try {
+      const res = await API("/user-history");
+      const data = await res.json();
+      if (!res.ok) return;
+
+      document.getElementById("statTotal").textContent = data.total;
+      const totalSpent = data.history.reduce((s, b) => s + (b.cost || 0), 0);
+      document.getElementById("statSpent").textContent = totalSpent.toFixed(0);
+
+      if (!data.history.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-text">No booking history yet.</div></div>`;
+        return;
+      }
+
+      el.innerHTML = `<table class="history-table">
+        <thead><tr>
+          <th>Token</th><th>Station</th><th>Mode</th><th>Slot Time</th><th>Cost</th><th>Date</th>
+        </tr></thead>
+        <tbody>${data.history.map(b => `<tr>
+          <td style="font-family:'Orbitron',sans-serif;color:var(--neon);font-size:12px;cursor:pointer" onclick="copyToken('${b.token}')" title="Copy token">${b.token}</td>
+          <td>${b.station_name}</td>
+          <td><span class="meta-tag ${b.charging_mode === 'fast' ? 'tag-fast' : 'tag-slow'}" style="display:inline-flex">${b.charging_mode === 'fast' ? '🚀 Fast' : '🐢 Slow'}</span></td>
+          <td style="color:var(--warn)">${b.slot_time}</td>
+          <td style="color:var(--neon)">₹${b.cost}</td>
+          <td style="color:var(--muted);font-size:12px">${b.booked_at}</td>
+        </tr>`).join("")}</tbody>
+      </table>`;
+    } catch (e) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-text">Could not load history</div></div>`;
+    }
+  }
+
+  // ── Load stations ──
+  async function loadStations() {
+    const el = document.getElementById("stationsGrid");
+    try {
+      const res = await API("/get-stations");
+      const data = await res.json();
+
+      el.innerHTML = data.stations.map(s => `
+        <div class="station-card">
+          <div class="station-name">⚡ ${s.name}</div>
+          <div class="station-addr">📍 ${s.address}</div>
+          <div class="station-chips">
+            <span class="chip chip-avail">${s.available_slots} slots</span>
+            <span class="chip chip-rating">★ ${s.rating}</span>
+            <span class="chip" style="background:rgba(123,47,255,0.1);color:#b59dff">🚀 ${s.fast_chargers} Fast</span>
+            <span class="chip" style="background:rgba(255,209,102,0.1);color:var(--warn)">🐢 ${s.slow_chargers} Slow</span>
+          </div>
+        </div>
+      `).join("");
+    } catch (e) {
+      el.innerHTML = `<div style="color:var(--muted);text-align:center;padding:20px">Could not load stations</div>`;
+    }
+  }
+
+  // ── Init ──
+  loadCurrentBookings();
+  loadHistory();
+  loadStations();
+</script>
+</body>
+</html>

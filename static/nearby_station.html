@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Bolt Earth — Nearby Charging Stations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --neon: #00f5d4; --neon2: #7b2fff; --green: #00ff88; --blue: #00d4ff;
+      --bg: #050a0e; --surface: #0d1b2a; --surface2: #0a1520;
+      --border: rgba(0,245,212,0.15); --text: #e8f4f8; --muted: #5a7a8a;
+      --danger: #ff4b6e; --warn: #ffd166; --amber: #ffb400;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Exo 2', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(0,245,212,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,212,0.03) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 24px;
+      background: rgba(5,10,14,0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+    }
+    .nav-brand { display: flex; align-items: center; gap: 8px; }
+    .nav-bolt { font-size: 20px; color: var(--neon); filter: drop-shadow(0 0 6px var(--neon)); animation: boltPulse 2s ease-in-out infinite; }
+    @keyframes boltPulse { 0%,100% { filter: drop-shadow(0 0 6px var(--neon)); } 50% { filter: drop-shadow(0 0 18px var(--neon)); } }
+    .nav-name { font-family: 'Orbitron', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 2px; }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .nav-user { background: rgba(0,245,212,0.07); border: 1px solid var(--border); border-radius: 16px; padding: 5px 13px; font-size: 12px; color: var(--neon); }
+    .nav-back { padding: 7px 14px; background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 11px; font-family: 'Exo 2', sans-serif; cursor: pointer; text-decoration: none; transition: all .2s; }
+    .nav-back:hover { border-color: var(--neon); color: var(--neon); }
+    .nav-logout { padding: 7px 14px; background: transparent; border: 1px solid rgba(255,75,110,.35); border-radius: 8px; color: var(--danger); font-size: 11px; font-family: 'Exo 2', sans-serif; cursor: pointer; transition: background .2s; }
+    .nav-logout:hover { background: rgba(255,75,110,.1); }
+
+    /* ── MAIN LAYOUT ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 60px; }
+
+    /* breadcrumb */
+    .bc { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .bc a { color: var(--neon); text-decoration: none; }
+    .bc a:hover { text-decoration: underline; }
+    .bc i { font-size: 10px; color: rgba(0,245,212,0.3); }
+
+    .page-title {
+      font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900;
+      margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
+    }
+    .page-title i { color: var(--blue); }
+
+    /* ── DETECT CARD ── */
+    .detect-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 24px; margin-bottom: 20px;
+    }
+    .detect-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn-detect {
+      padding: 11px 22px; background: rgba(0,245,212,.08);
+      border: 1px solid rgba(0,245,212,.35); border-radius: 10px;
+      color: var(--neon); font-family: 'Orbitron', sans-serif;
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: all .2s;
+    }
+    .btn-detect:hover { background: rgba(0,245,212,.15); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,245,212,.15); }
+    .btn-detect:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .radius-sel {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(0,245,212,.2);
+      color: #b0d0c0; padding: 9px 13px; border-radius: 9px;
+      font-size: 12px; outline: none; cursor: pointer; font-family: 'Exo 2', sans-serif;
+    }
+    .ns-err { display: none; color: #ff6464; font-size: 13px; padding: 10px 14px; background: rgba(255,80,80,.07); border: 1px solid rgba(255,80,80,.22); border-radius: 9px; margin-top: 12px; }
+
+    /* ── INFO BAR ── */
+    .info-bar {
+      display: none; gap: 14px; flex-wrap: wrap; align-items: center;
+      padding: 11px 16px; background: rgba(0,255,136,.04);
+      border: 1px solid rgba(0,255,136,.18); border-radius: 11px;
+      margin-top: 14px; font-size: 13px;
+    }
+    .itag { display: flex; align-items: center; gap: 6px; color: #b0ffd0; font-size: 12px; }
+    .itag i { color: var(--green); font-size: 10px; }
+    .itag strong { color: var(--green); }
+    /* ── MAP ── */
+    #ns_map {
+      height: 360px; width: 100%; border-radius: 16px;
+      margin-top: 16px; border: 1px solid rgba(0,245,212,.2); display: none;
+    }
+
+    /* ── STATION CARDS ── */
+    .stn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; margin-top: 20px; }
+    .stn-card {
+      background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.09);
+      border-radius: 15px; padding: 16px; display: flex; flex-direction: column;
+      gap: 8px; transition: all .25s; position: relative; cursor: pointer;
+    }
+    .stn-card:hover { border-color: rgba(0,255,136,.4); background: rgba(0,255,136,.04); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+    .stn-card.ai-best { border-color: var(--green); background: rgba(0,255,136,.06); box-shadow: 0 0 22px rgba(0,255,136,.1); }
+    .stn-card.selected-card { border-color: var(--blue); background: rgba(0,212,255,.06); box-shadow: 0 0 20px rgba(0,212,255,.12); }
+    .ai-badge {
+      position: absolute; top: -11px; left: 50%; transform: translateX(-50%);
+      background: linear-gradient(135deg, var(--green), #00d4aa); color: #000;
+      font-size: 10px; font-weight: 700; letter-spacing: .06em;
+      padding: 3px 12px; border-radius: 20px; white-space: nowrap;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .stn-name { font-size: 14px; font-weight: 600; color: #e0ffe8; margin-top: 4px; line-height: 1.3; }
+    .stn-addr { font-size: 11px; color: var(--muted); display: flex; align-items: flex-start; gap: 5px; line-height: 1.4; }
+    .stn-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin: 4px 0; }
+    .sstat { background: rgba(255,255,255,.04); border-radius: 8px; padding: 8px 6px; text-align: center; }
+    .sstat-val { font-size: 16px; font-weight: 700; font-family: 'Orbitron', sans-serif; }
+    .sstat-lbl { font-size: 9px; color: var(--muted); margin-top: 2px; }
+    .sv-green { color: var(--green); } .sv-amber { color: var(--amber); } .sv-blue { color: #00b4ff; } .sv-red { color: #ff4444; }
+    .cpill { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+    .cp-fast { background: rgba(255,180,0,.12); color: var(--amber); border: 1px solid var(--amber); }
+    .cp-slow { background: rgba(0,180,255,.1); color: #00b4ff; border: 1px solid #00b4ff; }
+    .rating-row { display: flex; align-items: center; gap: 5px; font-size: 12px; }
+    .stars { color: var(--amber); font-size: 11px; }
+    .amen-row { display: flex; flex-wrap: wrap; gap: 4px; }
+    .atag { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: rgba(255,255,255,.05); color: #8ab0a0; border: 1px solid rgba(255,255,255,.08); }
+    .btn-select-stn {
+      margin-top: auto; width: 100%; padding: 10px;
+      font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      border-radius: 9px; border: 1px solid rgba(0,255,136,.3);
+      background: rgba(0,255,136,.07); color: var(--green);
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-select-stn:hover { background: rgba(0,255,136,.16); }
+    .btn-select-stn.active { background: var(--green); color: #000; border-color: var(--green); }
+
+    /* ── BOOKING PANEL ── */
+    .booking-panel {
+      display: none; background: rgba(255,255,255,.025);
+      border: 1px solid rgba(0,255,136,.18); border-radius: 16px;
+      padding: 22px 24px; margin-top: 24px;
+    }
+    .bp-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 8px; }
+    .bp-title { font-size: 15px; font-weight: 600; color: #c8ffe0; display: flex; align-items: center; gap: 8px; }
+    .bp-stn-name { font-family: 'Orbitron', sans-serif; font-size: 12px; color: var(--green); }
+    .date-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 18px; background: rgba(0,255,136,.04);
+      border: 1px solid rgba(0,255,136,.12); border-radius: 12px; margin-bottom: 20px;
+    }
+    .date-row label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .date-inp {
+      background: rgba(255,255,255,.06); border: 1px solid rgba(0,255,136,.22);
+      color: #b0ffd0; padding: 9px 14px; border-radius: 9px; font-size: 13px;
+      outline: none; cursor: pointer; transition: border-color .2s; color-scheme: dark;
+    }
+    .date-inp:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,255,136,.1); }
+    .btn-load-slots {
+      padding: 9px 20px; border-radius: 9px; border: 1px solid rgba(0,255,136,.35);
+      background: rgba(0,255,136,.1); color: var(--green);
+      cursor: pointer; font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      display: inline-flex; align-items: center; gap: 7px; transition: all .2s;
+      font-family: 'Exo 2', sans-serif;
+    }
+    .btn-load-slots:hover { background: rgba(0,255,136,.2); transform: translateY(-1px); }
+
+    /* slot legend */
+    .slot-legend { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+    .slot-legend-item { display: flex; align-items: center; gap: 5px; }
+    .leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .leg-avail { background: var(--green); box-shadow: 0 0 5px rgba(0,255,136,.5); }
+    .leg-low { background: var(--amber); box-shadow: 0 0 5px rgba(255,180,0,.5); }
+    .leg-full { background: #ff4444; box-shadow: 0 0 5px rgba(255,68,68,.4); }
+    .leg-sel { background: var(--blue); box-shadow: 0 0 5px rgba(0,212,255,.5); }
+
+    /* slot grid */
+    .slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .ts-card {
+      position: relative; border-radius: 13px; padding: 14px 12px 12px;
+      text-align: center; cursor: pointer; transition: all .22s;
+      overflow: hidden; border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03);
+    }
+    .ts-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; border-radius: 13px 13px 0 0; transition: opacity .2s; opacity: .7; }
+    .ts-card.ts-avail-card::before { background: linear-gradient(90deg, var(--green), #00d4aa); }
+    .ts-card.ts-low-card::before  { background: linear-gradient(90deg, var(--amber), #ff8c00); }
+    .ts-card.ts-full::before      { background: rgba(255,68,68,.4); }
+    .ts-card.ts-avail-card:hover  { border-color: rgba(0,255,136,.45); background: rgba(0,255,136,.06); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,255,136,.1); }
+    .ts-card.ts-low-card:hover    { border-color: rgba(255,180,0,.45); background: rgba(255,180,0,.05); transform: translateY(-3px); }
+    .ts-card.ts-full              { opacity: .4; cursor: not-allowed; }
+    .ts-card.ts-selected          { border-color: var(--blue); background: rgba(0,212,255,.08); box-shadow: 0 0 0 2px rgba(0,212,255,.25), 0 8px 24px rgba(0,212,255,.12); transform: translateY(-3px); }
+    .ts-card.ts-selected::before  { background: linear-gradient(90deg, var(--blue), #0088ff); opacity: 1; }
+    .ts-time { font-size: 12px; font-weight: 600; color: #d0efe0; margin-bottom: 6px; letter-spacing: .01em; line-height: 1.3; }
+    .ts-card.ts-selected .ts-time { color: var(--blue); }
+    .ts-avail { font-size: 11px; font-weight: 700; margin-bottom: 7px; font-family: 'Orbitron', sans-serif; }
+    .ts-avail.ok   { color: var(--green); } .ts-avail.low { color: var(--amber); } .ts-avail.none { color: #ff4444; }
+    .ts-circles { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
+    .tsc { width: 9px; height: 9px; border-radius: 50%; transition: all .2s; }
+    .tsc.a { background: var(--green); box-shadow: 0 0 4px rgba(0,255,136,.5); }
+    .tsc.f { background: rgba(255,68,68,.6); }
+    .ts-card.ts-selected .tsc.a { background: var(--blue); box-shadow: 0 0 4px rgba(0,212,255,.5); }
+    .full-badge { position: absolute; top: 6px; right: 7px; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: rgba(255,68,68,.18); color: #ff6464; border: 1px solid rgba(255,68,68,.3); letter-spacing: .05em; }
+    .sel-badge  { position: absolute; top: 6px; right: 7px; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; background: rgba(0,212,255,.18); color: var(--blue); border: 1px solid rgba(0,212,255,.3); letter-spacing: .04em; }
+    .bp-loading { display: none; text-align: center; padding: 16px; color: var(--muted); font-size: 13px; }
+
+    /* selected slot summary */
+    #selected_slot_summary {
+      display: none; margin-bottom: 14px; padding: 11px 16px;
+      background: rgba(0,212,255,.06); border: 1px solid rgba(0,212,255,.2);
+      border-radius: 11px; font-size: 13px; color: #a0d8e8;
+      align-items: center; gap: 8px;
+    }
+
+    /* book button */
+    .btn-confirm-book {
+      width: 100%; padding: 15px;
+      font-family: 'Orbitron', sans-serif; font-size: 13px; font-weight: 700;
+      letter-spacing: .07em; border: none; border-radius: 12px; cursor: pointer;
+      transition: all .25s; background: linear-gradient(135deg, var(--green), #00c870);
+      color: #000; position: relative; overflow: hidden;
+    }
+    .btn-confirm-book:hover { opacity: .92; transform: translateY(-2px); box-shadow: 0 10px 30px rgba(0,255,136,.3); }
+    .btn-confirm-book:disabled { opacity: .3; cursor: not-allowed; transform: none; box-shadow: none; background: #1a2a1e; color: #3a5a42; }
+
+    /* ── MODAL ── */
+    .modal-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.78); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
+    .modal-ov.open { display: flex; }
+    .modal-box { background: #0b1c14; border: 1px solid rgba(0,255,136,.22); border-radius: 20px; padding: 28px 26px 24px; width: 100%; max-width: 460px; position: relative; animation: mIn .3s ease; }
+    @keyframes mIn { from { opacity: 0; transform: scale(.93) translateY(14px); } to { opacity: 1; transform: none; } }
+    .modal-x { position: absolute; top: 14px; right: 14px; width: 30px; height: 30px; border-radius: 50%; background: rgba(255,255,255,.07); border: none; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all .2s; }
+    .modal-x:hover { background: rgba(255,80,80,.15); color: #ff6464; }
+    .conf-icon { width: 64px; height: 64px; border-radius: 50%; background: rgba(0,255,136,.12); border: 2px solid var(--green); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 1.8rem; color: var(--green); }
+    .conf-title { text-align: center; font-family: 'Orbitron', sans-serif; font-size: 16px; color: var(--green); margin-bottom: 4px; }
+    .conf-sub-txt { text-align: center; font-size: 12px; color: var(--muted); margin-bottom: 18px; }
+    .token-box { text-align: center; background: rgba(0,255,136,.07); border: 1px solid rgba(0,255,136,.25); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+    .token-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+    .token-val { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; color: var(--green); font-weight: 700; letter-spacing: .12em; }
+    .conf-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.06); font-size: 13px; }
+    .conf-row:last-of-type { border-bottom: none; }
+    .conf-lbl { color: var(--muted); }
+    .conf-val { color: #c8ffe0; font-weight: 600; }
+    .conf-val.green { color: var(--green); } .conf-val.amber { color: var(--amber); }
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; background: rgba(0,255,136,.12); color: var(--green); border: 1px solid rgba(0,255,136,.3); font-size: 11px; font-weight: 700; }
+    .modal-acts { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-close-modal { flex: 1; padding: 11px; border-radius: 9px; border: 1px solid rgba(255,255,255,.1); background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .2s; font-family: 'Exo 2', sans-serif; }
+    .btn-close-modal:hover { background: rgba(255,255,255,.05); }
+    .btn-new-booking { flex: 1.5; padding: 11px; border-radius: 9px; background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.3); color: var(--green); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; font-family: 'Exo 2', sans-serif; }
+    .btn-new-booking:hover { background: rgba(0,255,136,.18); }
+    .modal-full-msg { text-align: center; padding: 8px 0; }
+
+    /* ── FOOTER ── */
+    footer { background: rgba(0,0,0,.4); border-top: 1px solid rgba(0,245,212,.12); padding: 18px 24px; margin-top: 20px; }
+    .footer-inner { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; max-width: 1100px; margin: 0 auto; }
+    .footer-block { font-size: 12px; line-height: 2; color: var(--muted); }
+    .footer-block strong { color: #a0d0b8; display: block; margin-bottom: 2px; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+    .footer-block a { color: var(--neon); text-decoration: none; }
+    #footer_loc, #footer_stn { color: #c8ffe0; font-weight: 500; }
+
+    @media (max-width: 600px) {
+      .detect-row { flex-direction: column; align-items: flex-start; }
+      .stn-grid { grid-template-columns: 1fr; }
+      .slot-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-inner { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAVBAR ── -->
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="nav-bolt">⚡</span>
+    <span class="nav-name">BOLT EARTH</span>
+  </div>
+  <div class="nav-right">
+    <div class="nav-user">👤 <span id="navUser">—</span></div>
+    <a href="/dashboard-page" class="nav-back">← Dashboard</a>
+    <button class="nav-logout" onclick="logout()">⏻ Logout</button>
+  </div>
+</nav>
+
+<main>
+  <div class="bc">
+    <a href="/dashboard-page"><i class="fa-solid fa-house"></i> Dashboard</a>
+    <i class="fa-solid fa-chevron-right"></i>
+    <span style="color:var(--blue)">Nearby Stations</span>
+  </div>
+
+  <h1 class="page-title">
+    <i class="fa-solid fa-location-dot"></i>
+    Nearby EV Charging Stations
+  </h1>
+
+  <!-- ── DETECT CARD ── -->
+  <div class="detect-card">
+    <div class="detect-row">
+      <button class="btn-detect" id="ns_btn" onclick="ns_detect()">
+        <i class="fa-solid fa-crosshairs"></i> Detect My Location
+      </button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--muted)">Radius:</label>
+        <select class="radius-sel" id="radius_sel">
+          <option value="5">5 km</option>
+          <option value="8" selected>8 km</option>
+          <option value="10">10 km</option>
+          <option value="15">15 km</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="ns-err" id="ns_err"></div>
+
+    <!-- Info bar -->
+    <div class="info-bar" id="ns_infoBar">
+      <div class="itag"><i class="fa-solid fa-circle-dot"></i><span id="ns_coords">--</span></div>
+      <div class="itag">
+        <i class="fa-solid fa-star"></i>
+        AI Best: <strong id="ns_bestName">--</strong>&nbsp;·&nbsp;
+        <span id="ns_bestDist">--</span>&nbsp;·&nbsp;
+        <span id="ns_bestSlots">--</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAP ── -->
+  <div id="ns_map"></div>
+
+  <!-- ── STATION CARDS ── -->
+  <div class="stn-grid" id="ns_grid"></div>
+
+  <!-- ── BOOKING PANEL ── -->
+  <div class="booking-panel" id="booking_panel">
+    <div class="bp-hdr">
+      <div class="bp-title">
+        <i class="fa-solid fa-calendar-check" style="color:var(--green)"></i>
+        Select Time Slot
+      </div>
+      <span class="bp-stn-name" id="bp_stn_name">--</span>
+    </div>
+
+    <div class="date-row">
+      <label><i class="fa-solid fa-calendar" style="color:var(--green);margin-right:4px"></i> Date</label>
+      <input type="date" class="date-inp" id="slot_date"/>
+      <button class="btn-load-slots" onclick="loadTimeSlots()">
+        <i class="fa-solid fa-rotate"></i> Load Slots
+      </button>
+      <span id="slot_date_display" style="font-size:12px;color:var(--muted);margin-left:4px"></span>
+    </div>
+
+    <div class="slot-legend">
+      <div class="slot-legend-item"><span class="leg-dot leg-avail"></span> Available</div>
+      <div class="slot-legend-item"><span class="leg-dot leg-low"></span> Limited (1–2 left)</div>
+      <div class="slot-legend-item"><span class="leg-dot leg-full"></span> Full</div>
+      <div class="slot-legend-item"><span class="leg-dot leg-sel"></span> Selected</div>
+    </div>
+
+    <div class="bp-loading" id="bp_loading">
+      <i class="fa-solid fa-spinner fa-spin"></i> Loading time slots…
+    </div>
+
+    <div class="slot-grid" id="slot_grid"></div>
+
+    <div id="selected_slot_summary" style="display:none">
+      <i class="fa-solid fa-circle-check" style="color:var(--blue)"></i>
+      <span id="selected_slot_text">--</span>
+    </div>
+
+    <button class="btn-confirm-book" id="book_btn" onclick="confirmBooking()" disabled>
+      <i class="fa-solid fa-lock"></i>&nbsp; Confirm &amp; Book Slot
+    </button>
+  </div>
+</main>
+
+<!-- ── BOOKING CONFIRMATION MODAL ── -->
+<div class="modal-ov" id="conf_modal">
+  <div class="modal-box">
+    <button class="modal-x" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+
+    <div id="modal_success">
+      <div class="conf-icon"><i class="fa-solid fa-check"></i></div>
+      <div class="conf-title">Booking Confirmed!</div>
+      <div class="conf-sub-txt">Your EV charging slot has been reserved</div>
+      <div class="token-box">
+        <div class="token-lbl">Booking Token ID</div>
+        <div class="token-val" id="conf_token">EVCM00000</div>
+      </div>
+      <div class="conf-row"><span class="conf-lbl">Station</span><span class="conf-val" id="conf_stn">--</span></div>
+      <div class="conf-row"><span class="conf-lbl">Date</span><span class="conf-val" id="conf_date">--</span></div>
+      <div class="conf-row"><span class="conf-lbl">Time Slot</span><span class="conf-val amber" id="conf_slot">--</span></div>
+      <div class="conf-row"><span class="conf-lbl">Slots Remaining</span><span class="conf-val green" id="conf_remain">--</span></div>
+      <div class="conf-row">
+        <span class="conf-lbl">Status</span>
+        <span><span class="status-pill"><i class="fa-solid fa-circle-check" style="font-size:10px"></i> Confirmed</span></span>
+      </div>
+      <div class="modal-acts">
+        <button class="btn-close-modal" onclick="closeModal()">Close</button>
+        <button class="btn-new-booking" onclick="resetBooking()">
+          <i class="fa-solid fa-plus"></i> New Booking
+        </button>
+      </div>
+    </div>
+
+    <div id="modal_full" style="display:none" class="modal-full-msg">
+      <div style="font-size:2rem;color:var(--amber);margin-bottom:12px"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div style="font-size:14px;font-weight:600;color:#c8ffe0;margin-bottom:8px" id="full_msg">Slot is full</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">Please select a different time slot</div>
+      <button onclick="closeModal()" style="padding:10px 22px;border-radius:9px;border:1px solid rgba(0,255,136,.3);background:rgba(0,255,136,.08);color:var(--green);cursor:pointer;font-size:13px;font-weight:600;font-family:'Exo 2',sans-serif">
+        Choose Another Slot
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-block">
+      <strong><i class="fa-solid fa-location-dot"></i> Your Location</strong>
+      <span id="footer_loc">Not detected</span>
+    </div>
+    <div class="footer-block">
+      <strong><i class="fa-solid fa-charging-station"></i> Selected Station</strong>
+      <span id="footer_stn">None selected</span>
+    </div>
+    <div class="footer-block">
+      <strong><i class="fa-solid fa-headset"></i> Support</strong>
+      <a href="tel:+918012345678">+91 80123 45678</a> · <a href="mailto:support@boltearth.in">support@boltearth.in</a>
+    </div>
+    <div class="footer-block" style="text-align:right">
+      Bolt Earth EV Charging · 2025–26
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── AUTH GUARD ──
+const _token = sessionStorage.getItem('bolt_token');
+const _user  = JSON.parse(sessionStorage.getItem('bolt_user') || '{}');
+if (!_token) window.location.href = '/login-page';
+document.getElementById('navUser').textContent = _user.full_name || _user.name || 'User';
+
+function logout() { sessionStorage.clear(); window.location.href = '/login-page'; }
+
+const API = (path, opts={}) =>
+  fetch(path, { ...opts, headers: { Authorization: `Bearer ${_token}`, 'Content-Type': 'application/json', ...(opts.headers||{}) } });
+
+// ── STATE ──
+let nsMap=null, userMarker=null, stationLayers=[], allStations=[];
+let selectedStn=null, selectedSlot=null, userLat=null, userLon=null;
+
+// ── LEAFLET ICONS ──
+const iconUser = L.divIcon({
+  html:`<div style="width:18px;height:18px;border-radius:50%;background:#00aaff;border:3px solid #fff;box-shadow:0 0 12px rgba(0,170,255,.7)"></div>`,
+  iconSize:[18,18], iconAnchor:[9,9], className:''
+});
+const mkStationIcon = (isBest) => L.divIcon({
+  html:`<div style="width:${isBest?22:16}px;height:${isBest?22:16}px;border-radius:50%;background:${isBest?'#ffb400':'#00ff88'};border:2px solid #fff;box-shadow:0 0 ${isBest?'14px rgba(255,180,0,.8)':'8px rgba(0,255,136,.5)'}"></div>`,
+  iconSize:[isBest?22:16, isBest?22:16],
+  iconAnchor:[isBest?11:8, isBest?11:8],
+  className:''
+});
+
+
+// ── STEP 1: DETECT GPS ──
+function ns_detect() {
+  if (!navigator.geolocation) { ns_showErr('Geolocation not supported.'); return; }
+  ns_setLoading(true); ns_hideErr();
+  navigator.geolocation.getCurrentPosition(ns_onGPS, ns_onGPSErr, { enableHighAccuracy:true, timeout:10000 });
+}
+
+// ── STEP 2: GPS SUCCESS → call API ──
+function ns_onGPS(pos) {
+  userLat = pos.coords.latitude;
+  userLon = pos.coords.longitude;
+  const radius = parseInt(document.getElementById('radius_sel').value);
+  document.getElementById('footer_loc').textContent = `${userLat.toFixed(4)}°N, ${userLon.toFixed(4)}°E`;
+
+  API('/get-stations')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.stations || !data.stations.length) throw new Error('No stations found nearby.');
+      // Attach mock distances for demo (in production these come from backend)
+      const dists = ['1.4','2.9','3.2','4.1','5.7'];
+      allStations = data.stations.map((s,i) => ({
+        ...s,
+        lat: s.lat || (userLat + (Math.random()-.5)*.04),
+        lon: s.lon || (userLon + (Math.random()-.5)*.04),
+        distance_km: dists[i] || (Math.random()*7+0.5).toFixed(1),
+        fast_power: s.fast_chargers > 1 ? 50 : 22,
+        charger_type: s.fast_chargers > 0 ? 'Fast' : 'Slow',
+        amenities: ['WiFi','Parking','Café'].slice(0, 1+i%3),
+        ai_score: (1.2 + i*0.4).toFixed(1),
+        is_best: i === 0,
+        total_slots: (s.fast_chargers||0) + (s.slow_chargers||0),
+      }));
+      renderStations({ stations: allStations, best: allStations[0] });
+    })
+    .catch(err => ns_showErr(err.message))
+    .finally(() => ns_setLoading(false));
+}
+
+// ── STEP 3: RENDER MAP + CARDS ──
+function renderStations(data) {
+  const best=data.best, stns=data.stations;
+  document.getElementById('ns_coords').textContent   = `${userLat.toFixed(4)}°N, ${userLon.toFixed(4)}°E`;
+  document.getElementById('ns_bestName').textContent = best ? best.name : '--';
+  document.getElementById('ns_bestDist').textContent = best ? best.distance_km+' km' : '--';
+  document.getElementById('ns_bestSlots').textContent= best ? best.available_slots+' free' : '--';
+  document.getElementById('ns_infoBar').style.display='flex';
+
+  const mapEl = document.getElementById('ns_map');
+  mapEl.style.display = 'block';
+  if (!nsMap) {
+    nsMap = L.map('ns_map').setView([userLat, userLon], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:18, attribution:'© OpenStreetMap contributors' }).addTo(nsMap);
+  } else {
+    nsMap.setView([userLat, userLon], 13);
+    stationLayers.forEach(l => nsMap.removeLayer(l)); stationLayers=[];
+    if (userMarker) nsMap.removeLayer(userMarker);
+  }
+
+  userMarker = L.marker([userLat,userLon],{icon:iconUser}).addTo(nsMap).bindPopup('<b>📍 You are here</b>').openPopup();
+
+  stns.forEach((s,idx) => {
+    const icon = mkStationIcon(s.is_best);
+    const popup = `<div style="font-size:13px;min-width:180px;line-height:1.7">
+      <b>${s.is_best?'⭐ AI BEST – ':''}${s.name}</b><br/>
+      ${s.address}<br/>
+      📏 <b>${s.distance_km} km</b>&nbsp;★${s.rating}<br/>
+      🔌 ${s.charger_type} · ${s.fast_power} kW<br/>
+      ✅ <b style="color:#00ff88">${s.available_slots}</b>/${s.total_slots} slots free
+    </div>`;
+    const mk = L.marker([s.lat,s.lon],{icon}).addTo(nsMap).bindPopup(popup);
+    stationLayers.push(mk);
+    if (s.is_best) {
+      const line = L.polyline([[userLat,userLon],[s.lat,s.lon]], {color:'#ffb400',weight:2,dashArray:'6 4',opacity:.7}).addTo(nsMap);
+      stationLayers.push(line);
+    }
+  });
+
+  // CARDS
+  const grid = document.getElementById('ns_grid');
+  grid.innerHTML = '';
+  stns.forEach((s,idx) => {
+    const slotCol = s.available_slots > 2 ? 'sv-green' : s.available_slots > 0 ? 'sv-amber' : 'sv-red';
+    const pillCls = s.charger_type==='Fast' ? 'cp-fast' : 'cp-slow';
+    const stars   = renderStarsText(s.rating);
+    const amenHTML = (s.amenities||[]).map(a=>`<span class="atag">${a}</span>`).join('');
+    const card = document.createElement('div');
+    card.className = 'stn-card' + (s.is_best?' ai-best':'');
+    card.id = 'card_'+s.id;
+    card.onclick = (e) => {
+      if (e.target.closest('.btn-select-stn')) return;
+      nsMap.flyTo([s.lat,s.lon], 15, {duration:1});
+    };
+    card.innerHTML = `
+      ${s.is_best?'<div class="ai-badge"><i class="fa-solid fa-brain" style="font-size:.7rem"></i> AI RECOMMENDED</div>':''}
+      <div style="margin-top:${s.is_best?8:0}px">
+        <span class="cpill ${pillCls}">${s.charger_type} · ${s.fast_power} kW</span>
+        <div class="stn-name">${s.name}</div>
+        <div class="stn-addr"><i class="fa-solid fa-map-pin" style="font-size:10px;margin-top:2px;flex-shrink:0"></i>${s.address}</div>
+        <div class="stn-stats">
+          <div class="sstat"><div class="sstat-val sv-blue">${s.distance_km}</div><div class="sstat-lbl">km away</div></div>
+          <div class="sstat"><div class="sstat-val ${slotCol}">${s.available_slots}</div><div class="sstat-lbl">slots free</div></div>
+          <div class="sstat"><div class="sstat-val sv-amber">${s.rating}</div><div class="sstat-lbl">rating</div></div>
+        </div>
+        <div class="rating-row">
+          <span class="stars">${stars}</span>
+          <span style="color:#c8ffe0;font-weight:600;margin-left:3px">${s.rating}</span>
+          <span style="font-size:10px;color:var(--muted);margin-left:4px">(${s.total_slots} chargers)</span>
+        </div>
+        ${amenHTML?`<div class="amen-row">${amenHTML}</div>`:''}
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">AI Score: <span style="color:var(--green);font-weight:600">${s.ai_score}</span></div>
+      </div>
+      <button class="btn-select-stn" id="selbtn_${s.id}" onclick="selectStation('${s.id}')">
+        <i class="fa-solid fa-charging-station"></i> Select This Station
+      </button>`;
+    grid.appendChild(card);
+  });
+  setTimeout(() => nsMap.invalidateSize(), 100);
+}
+
+// ── SELECT STATION ──
+function selectStation(stnId) {
+  selectedStn = allStations.find(s => s.id === stnId);
+  selectedSlot = null;
+  if (!selectedStn) return;
+
+  document.querySelectorAll('.stn-card').forEach(c => c.classList.remove('selected-card'));
+  document.querySelectorAll('.btn-select-stn').forEach(b => { b.classList.remove('active'); b.innerHTML='<i class="fa-solid fa-charging-station"></i> Select This Station'; });
+  document.getElementById('card_'+stnId)?.classList.add('selected-card');
+  const selfBtn = document.getElementById('selbtn_'+stnId);
+  if (selfBtn) { selfBtn.classList.add('active'); selfBtn.innerHTML='<i class="fa-solid fa-circle-check"></i> Selected'; }
+  document.getElementById('footer_stn').textContent = selectedStn.name;
+
+  const panel = document.getElementById('booking_panel');
+  panel.style.display = 'block';
+  document.getElementById('bp_stn_name').textContent = selectedStn.name;
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('slot_date').value = today;
+  document.getElementById('slot_date').min   = today;
+  document.getElementById('slot_grid').innerHTML = '';
+  document.getElementById('book_btn').disabled = true;
+  document.getElementById('book_btn').innerHTML = '<i class="fa-solid fa-calendar-check"></i>&nbsp; Book Selected Slot';
+  loadTimeSlots();
+  setTimeout(() => panel.scrollIntoView({behavior:'smooth',block:'start'}), 150);
+}
+
+// ── LOAD TIME SLOTS → /api/time_slots ──
+function loadTimeSlots() {
+  if (!selectedStn) return;
+  const date = document.getElementById('slot_date').value;
+  if (!date) return;
+  document.getElementById('bp_loading').style.display = 'block';
+  document.getElementById('slot_grid').innerHTML = '';
+  document.getElementById('book_btn').disabled = true;
+  selectedSlot = null;
+
+  // In production: POST /api/time_slots
+  // Here we generate realistic mock slots
+  setTimeout(() => {
+    document.getElementById('bp_loading').style.display = 'none';
+    const slots = generateMockSlots(selectedStn);
+    renderTimeSlots(slots);
+  }, 600);
+}
+
+function generateMockSlots(stn) {
+  const hours = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
+  const total = stn.total_slots || 4;
+  return hours.map(h => {
+    const booked = Math.floor(Math.random() * (total + 1));
+    const avail  = total - booked;
+    const end    = (parseInt(h)+1).toString().padStart(2,'0') + ':00';
+    return { key: h, label: `${h} – ${end}`, start: h, end, available: avail, total, booked };
+  });
+}
+
+// ── RENDER SLOT CARDS ──
+function renderTimeSlots(slots) {
+  const grid = document.getElementById('slot_grid');
+  grid.innerHTML = '';
+  const avail = slots.filter(s => s.available > 0).length;
+  document.getElementById('slot_date_display').textContent = `${avail} of ${slots.length} slots available`;
+
+  slots.forEach(slot => {
+    const isFull = slot.available <= 0;
+    const isLow  = slot.available > 0 && slot.available <= 2;
+    const availCls = isFull ? 'none' : isLow ? 'low' : 'ok';
+    const availTxt = isFull ? 'Full' : isLow ? `${slot.available} left` : `${slot.available} free`;
+    const cardType = isFull ? 'ts-full' : isLow ? 'ts-low-card' : 'ts-avail-card';
+    const showTotal = Math.min(slot.total, 6);
+    let circles = '';
+    for (let i=0; i<showTotal; i++) circles += `<div class="tsc ${i < Math.min(slot.booked,showTotal) ? 'f':'a'}"></div>`;
+    const parts = slot.label.split('–');
+    const timeHtml = parts.length===2
+      ? `${parts[0].trim()}<br><span style="font-size:10px;color:var(--muted)">– ${parts[1].trim()}</span>`
+      : slot.label;
+    const card = document.createElement('div');
+    card.className = `ts-card ${cardType}`;
+    card.id = 'ts_' + slot.key.replace(/:/g,'_');
+    if (!isFull) card.onclick = () => selectSlot(slot, card);
+    card.innerHTML = `${isFull?'<div class="full-badge">FULL</div>':''}<div class="ts-time">${timeHtml}</div><div class="ts-avail ${availCls}">${availTxt}</div><div class="ts-circles">${circles}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ── SELECT SLOT ──
+function selectSlot(slot, cardEl) {
+  selectedSlot = slot;
+  document.querySelectorAll('.ts-card').forEach(c => { c.classList.remove('ts-selected'); const sb=c.querySelector('.sel-badge'); if(sb) sb.remove(); });
+  cardEl.classList.add('ts-selected');
+  const badge = document.createElement('div'); badge.className='sel-badge'; badge.innerHTML='✓ SELECTED'; cardEl.appendChild(badge);
+  const summary = document.getElementById('selected_slot_summary');
+  document.getElementById('selected_slot_text').innerHTML = `Selected: <strong style="color:var(--blue)">${slot.label}</strong> &nbsp;·&nbsp; ${slot.available} of ${slot.total} slots free`;
+  summary.style.display = 'flex';
+  const btn = document.getElementById('book_btn');
+  btn.disabled = false;
+  btn.innerHTML = `<i class="fa-solid fa-lock"></i>&nbsp; Confirm &amp; Book — ${slot.label}`;
+}
+
+// ── CONFIRM BOOKING → POST /book-slot ──
+async function confirmBooking() {
+  if (!selectedStn || !selectedSlot) return;
+  const date = document.getElementById('slot_date').value;
+  const btn  = document.getElementById('book_btn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Booking…';
+
+  try {
+    const res = await API('/book-slot', {
+      method: 'POST',
+      body: JSON.stringify({
+        station_name:  selectedStn.name,
+        slot_id:       'SL' + selectedSlot.key.replace(':',''),
+        slot_time:     selectedSlot.label,
+        charging_mode: selectedStn.charger_type === 'Fast' ? 'fast' : 'slow',
+        duration_min:  60,
+        cost:          selectedStn.charger_type === 'Fast' ? 25 : 12,
+      })
+    });
+
+    if (res.status === 401) { sessionStorage.clear(); window.location.href='/login-page'; return; }
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById('conf_token').textContent  = data.token;
+      document.getElementById('conf_stn').textContent    = selectedStn.name;
+      document.getElementById('conf_date').textContent   = date;
+      document.getElementById('conf_slot').textContent   = selectedSlot.label;
+      document.getElementById('conf_remain').textContent = `${selectedSlot.available - 1} of ${selectedSlot.total} slots left`;
+      document.getElementById('modal_success').style.display = 'block';
+      document.getElementById('modal_full').style.display    = 'none';
+      openModal();
+      btn.innerHTML = '<i class="fa-solid fa-calendar-check"></i>&nbsp; Book Selected Slot';
+    } else {
+      document.getElementById('full_msg').textContent = data.detail || 'Booking failed';
+      document.getElementById('modal_full').style.display    = 'block';
+      document.getElementById('modal_success').style.display = 'none';
+      openModal();
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-calendar-check"></i>&nbsp; Book Selected Slot';
+    }
+  } catch (e) {
+    alert('Booking failed: ' + e.message);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-calendar-check"></i>&nbsp; Book Selected Slot';
+  }
+}
+
+function openModal()  { document.getElementById('conf_modal').classList.add('open'); }
+function closeModal() { document.getElementById('conf_modal').classList.remove('open'); }
+document.getElementById('conf_modal').addEventListener('click', e => { if(e.target===document.getElementById('conf_modal')) closeModal(); });
+
+function resetBooking() {
+  closeModal(); selectedSlot=null;
+  document.getElementById('book_btn').disabled=true;
+  document.getElementById('book_btn').innerHTML='<i class="fa-solid fa-lock"></i>&nbsp; Confirm &amp; Book Slot';
+  document.querySelectorAll('.ts-card').forEach(c => { c.classList.remove('ts-selected'); const sb=c.querySelector('.sel-badge'); if(sb) sb.remove(); });
+  document.getElementById('selected_slot_summary').style.display='none';
+  window.scrollTo({top:document.getElementById('booking_panel').offsetTop-20, behavior:'smooth'});
+}
+
+// ── HELPERS ──
+function renderStarsText(r) { return '★'.repeat(Math.round(r)).padEnd(5,'☆'); }
+function ns_onGPSErr(err) {
+  ns_setLoading(false);
+  const msgs={1:'Location permission denied.',2:'Location unavailable.',3:'GPS timed out.'};
+  ns_showErr(msgs[err.code]||'GPS error.');
+}
+function ns_setLoading(on) {
+  document.getElementById('ns_btn').disabled = on;
+  document.getElementById('ns_btn').innerHTML = on
+    ? '<i class="fa-solid fa-spinner fa-spin"></i> Detecting…'
+    : '<i class="fa-solid fa-crosshairs"></i> Detect My Location';
+}
+function ns_showErr(msg) { const el=document.getElementById('ns_err'); el.textContent=msg; el.style.display='block'; }
+function ns_hideErr()    { const el=document.getElementById('ns_err'); if(el) el.style.display='none'; }
+</script>
+</body>
+</html>

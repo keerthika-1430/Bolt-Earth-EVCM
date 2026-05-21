@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bolt Earth Electric Vehicle Charging Station</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════ NAVBAR ═══════════════════════════ -->
+  <nav class="navbar">
+    <div class="nav-logo">
+      <span class="bolt-icon">⚡</span>
+      <span class="nav-brand">Bolt Earth</span>
+    </div>
+    <div class="nav-status">
+      <span class="status-dot"></span>
+      <span class="status-text">LIVE</span>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════ SLIDE WRAPPER ═══════════════════════════ -->
+  <div class="slide-container" id="slideContainer">
+
+    <!-- ──────────────── SLIDE 1: HOME ──────────────── -->
+    <section class="slide active" id="slide-home">
+      <div class="slide-content home-content">
+        <div class="home-glow-ring"></div>
+        <div class="home-icon-wrap">
+          <div class="charge-icon">⚡</div>
+          <div class="pulse-ring ring1"></div>
+          <div class="pulse-ring ring2"></div>
+          <div class="pulse-ring ring3"></div>
+        </div>
+        <h1 class="home-title">Bolt Earth</h1>
+        <p class="home-subtitle">Electric Vehicle Charging Station</p>
+        <p class="home-tagline">Smart · Fast · Sustainable</p>
+
+        <div class="home-stats-row">
+          <div class="stat-pill">
+            <span class="stat-val" id="homeVoltage">12V</span>
+            <span class="stat-lbl">Voltage</span>
+          </div>
+          <div class="stat-pill active-pill">
+            <span class="stat-val" id="homeSOC">72%</span>
+            <span class="stat-lbl">Battery SOC</span>
+          </div>
+          <div class="stat-pill">
+            <span class="stat-val" id="homeTemp">32°C</span>
+            <span class="stat-lbl">Temp</span>
+          </div>
+        </div>
+
+        <div class="home-cta" onclick="goToSlide(1)">
+          <span>Explore Dashboard</span>
+          <span class="arrow-right">→</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────── SLIDE 2: BATTERY DETAILS ──────────────── -->
+    <section class="slide" id="slide-battery">
+      <div class="slide-content">
+        <h2 class="section-title"><span class="icon">🔋</span> Battery Details</h2>
+
+        <div class="battery-grid">
+
+          <div class="bat-card glow-blue">
+            <div class="bat-icon">🔌</div>
+            <div class="bat-label">Battery Type</div>
+            <div class="bat-value">Lithium-ion</div>
+          </div>
+
+          <div class="bat-card glow-cyan">
+            <div class="bat-icon">⚡</div>
+            <div class="bat-label">Voltage</div>
+            <div class="bat-value" id="voltageVal">12 V</div>
+          </div>
+
+          <div class="bat-card glow-green">
+            <div class="bat-icon">🔬</div>
+            <div class="bat-label">Current</div>
+            <div class="bat-value" id="currentVal">3.2 A</div>
+          </div>
+
+          <div class="bat-card glow-orange">
+            <div class="bat-icon">🌡️</div>
+            <div class="bat-label">Temperature</div>
+            <div class="bat-value" id="tempVal">32°C</div>
+          </div>
+
+        </div>
+
+        <!-- SOC Progress -->
+        <div class="progress-section">
+          <div class="prog-header">
+            <span class="prog-label">⚡ State of Charge (SOC)</span>
+            <span class="prog-val" id="socPct">72%</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-bar soc-bar" id="socBar" style="width:72%"></div>
+          </div>
+        </div>
+
+        <!-- SOH Progress -->
+        <div class="progress-section">
+          <div class="prog-header">
+            <span class="prog-label">🛡️ State of Health (SOH)</span>
+            <span class="prog-val" id="sohPct">94%</span>
+          </div>
+          <div class="prog-track">
+            <div class="prog-bar soh-bar" id="sohBar" style="width:94%"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ──────────────── SLIDE 3: CHARGING OPTIONS ──────────────── -->
+    <section class="slide" id="slide-charging">
+      <div class="slide-content">
+        <h2 class="section-title"><span class="icon">⚡</span> Charging Options</h2>
+
+        <div class="charging-compare">
+
+          <div class="charge-card fast-card" id="fastCard">
+            <div class="card-badge best-badge">★ Best Choice</div>
+            <div class="charge-type-icon">🚀</div>
+            <h3 class="charge-name">Fast Charging</h3>
+            <div class="charge-detail-row">
+              <span class="detail-icon">⏱</span>
+              <span class="detail-text"><span id="fastTime">25</span> minutes</span>
+            </div>
+            <div class="charge-detail-row">
+              <span class="detail-icon">💰</span>
+              <span class="detail-text">₹<span id="fastCost">15</span></span>
+            </div>
+            <div class="charge-detail-row">
+              <span class="detail-icon">⚡</span>
+              <span class="detail-text">5A · DC</span>
+            </div>
+            <div class="charge-meter">
+              <div class="charge-meter-fill fast-fill"></div>
+            </div>
+            <button class="select-btn fast-btn" onclick="selectCharging('fast')">Select Fast</button>
+          </div>
+
+          <div class="vs-divider">VS</div>
+
+          <div class="charge-card slow-card" id="slowCard">
+            <div class="charge-type-icon">🐢</div>
+            <h3 class="charge-name">Slow Charging</h3>
+            <div class="charge-detail-row">
+              <span class="detail-icon">⏱</span>
+              <span class="detail-text"><span id="slowTime">90</span> minutes</span>
+            </div>
+            <div class="charge-detail-row">
+              <span class="detail-icon">💰</span>
+              <span class="detail-text">₹<span id="slowCost">12</span></span>
+            </div>
+            <div class="charge-detail-row">
+              <span class="detail-icon">⚡</span>
+              <span class="detail-text">2A · AC</span>
+            </div>
+            <div class="charge-meter">
+              <div class="charge-meter-fill slow-fill"></div>
+            </div>
+            <button class="select-btn slow-btn" onclick="selectCharging('slow')">Select Slow</button>
+          </div>
+
+        </div>
+
+        <div class="selected-display" id="selectedDisplay" style="display:none">
+          <span class="sel-icon">✅</span>
+          <span id="selectedText">Fast Charging selected</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ──────────────── SLIDE 4: BOOKING ──────────────── -->
+    <section class="slide" id="slide-booking">
+      <div class="slide-content">
+        <h2 class="section-title"><span class="icon">📅</span> Book a Slot</h2>
+
+        <div class="booking-form">
+
+          <div class="form-group">
+            <label class="form-label">👤 Your Name</label>
+            <input class="form-input" type="text" id="userName" placeholder="Enter your name" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">📱 Phone Number</label>
+            <input class="form-input" type="tel" id="userPhone" placeholder="+91 XXXXX XXXXX" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">⚡ Charging Mode</label>
+            <div class="mode-toggle">
+              <button class="mode-btn active-mode" id="modeFast" onclick="setMode('fast')">⚡ Fast</button>
+              <button class="mode-btn" id="modeSlow" onclick="setMode('slow')">🐢 Slow</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">🕐 Time Slot</label>
+            <div class="slot-grid" id="slotGrid">
+              <!-- Slots generated by JS -->
+            </div>
+          </div>
+
+          <div class="booking-summary" id="bookingSummary">
+            <div class="summary-row"><span>Mode:</span><span id="sumMode">Fast Charging</span></div>
+            <div class="summary-row"><span>Time:</span><span id="sumTime">25 min</span></div>
+            <div class="summary-row"><span>Cost:</span><span id="sumCost">₹15</span></div>
+          </div>
+
+          <button class="book-btn" onclick="confirmBooking()">
+            <span>⚡ Confirm Booking</span>
+          </button>
+
+          <div class="booking-confirm" id="bookingConfirm" style="display:none">
+            <div class="confirm-icon">🎉</div>
+            <div class="confirm-text">Booking Confirmed!</div>
+            <div class="confirm-sub" id="confirmSub"></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /slide-container -->
+
+  <!-- ═══════════════════════════ BOTTOM NAV ═══════════════════════════ -->
+  <div class="bottom-nav">
+    <button class="nav-dot-btn" onclick="goToSlide(0)" data-idx="0">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-lbl">Home</span>
+    </button>
+    <button class="nav-dot-btn" onclick="goToSlide(1)" data-idx="1">
+      <span class="nav-icon">🔋</span>
+      <span class="nav-lbl">Battery</span>
+    </button>
+    <button class="nav-dot-btn" onclick="goToSlide(2)" data-idx="2">
+      <span class="nav-icon">⚡</span>
+      <span class="nav-lbl">Charge</span>
+    </button>
+    <button class="nav-dot-btn" onclick="goToSlide(3)" data-idx="3">
+      <span class="nav-icon">📅</span>
+      <span class="nav-lbl">Book</span>
+    </button>
+  </div>
+
+  <!-- ═══════════════════════════ SWIPE HINT ═══════════════════════════ -->
+  <div class="swipe-hint" id="swipeHint">
+    <span>← Swipe to navigate →</span>
+  </div>
+
+  <script>
+  // ── Auth guard: redirect to login if not authenticated ──
+  const _boltToken = sessionStorage.getItem("bolt_token");
+  const _boltUser  = JSON.parse(sessionStorage.getItem("bolt_user") || "{}");
+  if (!_boltToken) { window.location.href = "/login-page"; }
+
+  // ── Slide navigation ──
+  let currentSlide = 0;
+  const slides = document.querySelectorAll('.slide');
+  const navBtns = document.querySelectorAll('.nav-dot-btn');
+
+  function goToSlide(idx) {
+    slides[currentSlide].classList.remove('active');
+    navBtns[currentSlide]?.classList.remove('active');
+    currentSlide = idx;
+    slides[currentSlide].classList.add('active');
+    navBtns[currentSlide]?.classList.add('active');
+  }
+
+  navBtns.forEach((btn, i) => { btn.addEventListener('click', () => goToSlide(i)); });
+
+  // ── Live battery simulation ──
+  let soc = 72, soh = 94, voltage = 12.0, current = 3.2, temp = 32;
+
+  function updateStats() {
+    soc = Math.min(100, soc + (Math.random() > 0.7 ? 1 : 0));
+    temp = +(temp + (Math.random() - 0.5) * 0.4).toFixed(1);
+    current = +(current + (Math.random() - 0.5) * 0.1).toFixed(1);
+
+    document.getElementById('homeSOC').textContent   = soc + '%';
+    document.getElementById('homeVoltage').textContent = voltage.toFixed(1) + 'V';
+    document.getElementById('homeTemp').textContent  = temp + '°C';
+    document.getElementById('voltageVal').textContent = voltage.toFixed(1) + ' V';
+    document.getElementById('currentVal').textContent = current + ' A';
+    document.getElementById('tempVal').textContent    = temp + '°C';
+    document.getElementById('socPct').textContent     = soc + '%';
+    document.getElementById('sohPct').textContent     = soh + '%';
+    document.getElementById('socBar').style.width     = soc + '%';
+    document.getElementById('sohBar').style.width     = soh + '%';
+
+    // Update charging time/cost estimates based on SOC
+    const remaining = 100 - soc;
+    document.getElementById('fastTime').textContent = Math.round(remaining / 4);
+    document.getElementById('slowTime').textContent = Math.round(remaining / 1.5);
+    document.getElementById('fastCost').textContent = Math.round(remaining * 0.15 + 5);
+    document.getElementById('slowCost').textContent = Math.round(remaining * 0.12 + 3);
+  }
+
+  setInterval(updateStats, 3000);
+  updateStats();
+
+  // ── Charging selection ──
+  let selectedMode = 'fast';
+  function selectCharging(mode) {
+    selectedMode = mode;
+    document.getElementById('selectedDisplay').style.display = 'flex';
+    document.getElementById('selectedText').textContent =
+      (mode === 'fast' ? '🚀 Fast' : '🐢 Slow') + ' Charging selected';
+    setTimeout(() => goToSlide(3), 800);
+    setMode(mode);
+  }
+
+  function setMode(mode) {
+    selectedMode = mode;
+    document.getElementById('modeFast').classList.toggle('active-mode', mode === 'fast');
+    document.getElementById('modeSlow').classList.toggle('active-mode', mode === 'slow');
+    const isFast = mode === 'fast';
+    document.getElementById('sumMode').textContent  = isFast ? 'Fast Charging' : 'Slow Charging';
+    document.getElementById('sumTime').textContent  = isFast ? document.getElementById('fastTime').textContent + ' min' : document.getElementById('slowTime').textContent + ' min';
+    document.getElementById('sumCost').textContent  = '₹' + (isFast ? document.getElementById('fastCost').textContent : document.getElementById('slowCost').textContent);
+  }
+
+  // ── Slot grid ──
+  const slots = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','13:00','14:00','15:00','16:00','17:00'];
+  let selectedSlot = null;
+
+  function buildSlots() {
+    const grid = document.getElementById('slotGrid');
+    grid.innerHTML = slots.map(s => `
+      <div class="slot-btn" data-slot="${s}" onclick="pickSlot('${s}')">${s}</div>
+    `).join('');
+  }
+
+  function pickSlot(slot) {
+    selectedSlot = slot;
+    document.querySelectorAll('.slot-btn').forEach(b => b.classList.toggle('selected', b.dataset.slot === slot));
+  }
+
+  buildSlots();
+
+  // ── Booking confirmation with API call ──
+  async function confirmBooking() {
+    const name  = document.getElementById('userName').value.trim();
+    const phone = document.getElementById('userPhone').value.trim();
+
+    if (!name || !phone) { alert('Please enter your name and phone number.'); return; }
+    if (!selectedSlot)   { alert('Please select a time slot.'); return; }
+
+    const isFast = selectedMode === 'fast';
+    const cost   = parseFloat(document.getElementById(isFast ? 'fastCost' : 'slowCost').textContent);
+    const duration = parseInt(document.getElementById(isFast ? 'fastTime' : 'slowTime').textContent);
+
+    try {
+      const res = await fetch('/book-slot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _boltToken },
+        body: JSON.stringify({
+          station_name: 'Bolt Earth — Main Station',
+          slot_id: 'SL' + selectedSlot.replace(':', ''),
+          slot_time: selectedSlot,
+          charging_mode: selectedMode,
+          duration_min: duration,
+          cost: cost
+        })
+      });
+
+      if (res.status === 401) { sessionStorage.clear(); window.location.href = '/login-page'; return; }
+
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById('bookingConfirm').style.display = 'block';
+        document.getElementById('confirmSub').innerHTML =
+          `<strong>${name}</strong> · Slot: ${selectedSlot} · Mode: ${selectedMode === 'fast' ? '🚀 Fast' : '🐢 Slow'}<br>
+           <span style="font-family:'Orbitron',sans-serif;color:#00f5d4;font-size:18px;letter-spacing:3px">${data.token}</span><br>
+           <small>Save this token to verify your booking</small>`;
+      } else {
+        alert(data.detail || 'Booking failed. Try again.');
+      }
+    } catch (e) {
+      // Offline fallback — still show a local confirmation
+      const localToken = 'EV' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      document.getElementById('bookingConfirm').style.display = 'block';
+      document.getElementById('confirmSub').innerHTML =
+        `<strong>${name}</strong> · ${selectedSlot} · ${selectedMode}<br>
+         <span style="font-family:'Orbitron',sans-serif;color:#00f5d4;font-size:18px">${localToken}</span>`;
+    }
+  }
+
+  // ── Swipe hint ──
+  setTimeout(() => { const h = document.getElementById('swipeHint'); if(h) h.style.opacity = '0'; }, 3000);
+
+  // ── Back to dashboard link ──
+  const nav = document.querySelector('.navbar');
+  if (nav) {
+    const backBtn = document.createElement('a');
+    backBtn.href = '/dashboard-page';
+    backBtn.textContent = '← Dashboard';
+    backBtn.style.cssText = 'color:#00f5d4;font-size:13px;text-decoration:none;font-family:"Exo 2",sans-serif;font-weight:600;';
+    nav.appendChild(backBtn);
+  }
+  </script>
+</body>
+</html>

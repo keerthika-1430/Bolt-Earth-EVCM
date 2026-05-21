@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bolt Earth — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --neon:    #00f5d4;
+      --neon2:   #7b2fff;
+      --bg:      #050a0e;
+      --surface: #0d1b2a;
+      --border:  rgba(0,245,212,0.18);
+      --text:    #e8f4f8;
+      --muted:   #5a7a8a;
+      --danger:  #ff4b6e;
+      --success: #00f5d4;
+    }
+
+    body {
+      background: var(--bg);
+      font-family: 'Exo 2', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(0,245,212,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,245,212,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridDrift 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes gridDrift {
+      0%   { transform: translateY(0); }
+      100% { transform: translateY(40px); }
+    }
+
+    .orb { position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.15; pointer-events: none; animation: orbFloat 8s ease-in-out infinite alternate; }
+    .orb1 { width: 400px; height: 400px; background: var(--neon2); top: -100px;  right: -100px; }
+    .orb2 { width: 300px; height: 300px; background: var(--neon);  bottom: -50px; left: -50px; animation-delay: -4s; }
+
+    @keyframes orbFloat {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(20px,30px) scale(1.1); }
+    }
+
+    .auth-card {
+      position: relative;
+      width: min(420px, 94vw);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px 40px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 60px rgba(0,245,212,0.06), 0 30px 80px rgba(0,0,0,0.6);
+      animation: cardIn 0.6s cubic-bezier(.16,1,.3,1) both;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(40px) scale(0.96); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    .auth-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--neon), var(--neon2), transparent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+
+    .brand-bolt {
+      font-size: 28px;
+      filter: drop-shadow(0 0 8px var(--neon));
+      animation: boltPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes boltPulse {
+      0%,100% { filter: drop-shadow(0 0 6px var(--neon)); }
+      50%     { filter: drop-shadow(0 0 18px var(--neon)); }
+    }
+
+    .brand-name {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--text);
+      letter-spacing: 2px;
+    }
+
+    .auth-title    { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: var(--text); letter-spacing: 1px; margin-bottom: 4px; }
+    .auth-subtitle { color: var(--muted); font-size: 14px; font-weight: 300; margin-bottom: 36px; }
+
+    .form-group { margin-bottom: 20px; }
+
+    .form-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--neon);
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(0,245,212,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .form-input::placeholder { color: var(--muted); }
+
+    .form-input:focus {
+      border-color: var(--neon);
+      background: rgba(0,245,212,0.07);
+      box-shadow: 0 0 0 3px rgba(0,245,212,0.1);
+    }
+
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, var(--neon) 0%, #00bfa0 100%);
+      border: none;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #050a0e;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .submit-btn::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .submit-btn:hover           { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(0,245,212,0.35); }
+    .submit-btn:hover::after    { opacity: 1; }
+    .submit-btn:active          { transform: translateY(1px); }
+    .submit-btn:disabled        { opacity: 0.6; pointer-events: none; }
+
+    .auth-switch { text-align: center; margin-top: 24px; color: var(--muted); font-size: 13px; }
+    .auth-switch a { color: var(--neon); text-decoration: none; font-weight: 600; transition: opacity 0.2s; }
+    .auth-switch a:hover { opacity: 0.8; }
+
+    .error-msg {
+      background: rgba(255,75,110,0.1);
+      border: 1px solid rgba(255,75,110,0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--danger);
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; animation: shake 0.3s ease; }
+
+    .success-msg {
+      background: rgba(0,245,212,0.1);
+      border: 1px solid rgba(0,245,212,0.3);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--neon);
+      font-size: 13px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .success-msg.show { display: block; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+
+  <div class="auth-card">
+
+    <div class="brand">
+      <span class="brand-bolt">⚡</span>
+      <span class="brand-name">BOLT EARTH</span>
+    </div>
+
+    <h1 class="auth-title">Welcome Back</h1>
+    <p class="auth-subtitle">Sign in to your charging account</p>
+
+    <div class="error-msg"   id="errorMsg"></div>
+    <div class="success-msg" id="successMsg"></div>
+
+    <div class="form-group">
+      <label class="form-label">Email Address</label>
+      <input class="form-input" type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <button class="submit-btn" id="loginBtn" onclick="handleLogin()">⚡ SIGN IN</button>
+
+    <div class="auth-switch">
+      Don't have an account? <a href="/register-page">Create one →</a>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── If already logged in, skip to dashboard ─────────────────────────────
+    // Use sessionStorage — clears when browser tab closes (more secure)
+    // localStorage is NOT used for user data — only token lives here
+    if (sessionStorage.getItem("bolt_token")) {
+      window.location.href = "/dashboard-page";
+    }
+
+    // ─── Main login handler ───────────────────────────────────────────────────
+    async function handleLogin() {
+      const email    = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const btn      = document.getElementById("loginBtn");
+
+      clearMessages();
+
+      if (!email || !password) {
+        showError("Please fill in all fields.");
+        return;
+      }
+
+      const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRx.test(email)) {
+        showError("Please enter a valid email address.");
+        return;
+      }
+
+      btn.textContent = "Authenticating...";
+      btn.disabled    = true;
+
+      try {
+        const res = await fetch("/login", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          // ── Payload matches backend LoginRequest: { email, password } ───────
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          // 401 = wrong credentials, 503 = DB not connected, 422 = validation
+          const msg = (typeof data.detail === "string")
+            ? data.detail
+            : "Login failed. Please check your credentials.";
+          showError(msg);
+          return;
+        }
+
+        // ── Store ONLY the JWT token ──────────────────────────────────────────
+        // No user object in storage — fetch /me with the token when needed
+        sessionStorage.setItem("bolt_token", data.token);
+        sessionStorage.setItem("bolt_user", JSON.stringify(data.user));
+
+        // Clear any stale localStorage entries from old code
+        localStorage.removeItem("bolt_user");
+        localStorage.removeItem("bolt_token");
+
+        showSuccess("⚡ Login successful! Redirecting...");
+        setTimeout(() => { window.location.href = "/dashboard-page"; }, 1200);
+
+      } catch (err) {
+        console.error("Login error:", err);
+        showError("Connection error. Is the server running?");
+      } finally {
+        btn.textContent = "⚡ SIGN IN";
+        btn.disabled    = false;
+      }
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    function showError(msg) {
+      const el = document.getElementById("errorMsg");
+      el.classList.remove("show");
+      void el.offsetWidth;          // reflow — re-triggers shake animation
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function showSuccess(msg) {
+      const el = document.getElementById("successMsg");
+      el.textContent = msg;
+      el.classList.add("show");
+    }
+
+    function clearMessages() {
+      document.getElementById("errorMsg").classList.remove("show");
+      document.getElementById("successMsg").classList.remove("show");
+    }
+
+    // Enter key submits
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter") handleLogin();
+    });
+  </script>
+
+</body>
+</html>
