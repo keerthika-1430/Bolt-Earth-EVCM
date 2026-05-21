@@ -4,3 +4,4 @@ python-dotenv==1.2.2
 fastapi
 uvicorn[standard]
 pymongo
+python-jose[cryptography]
