@@ -1,8 +1,9 @@
-fastapi==0.115.12
-uvicorn==0.34.3
-gunicorn==23.0.0
-pymongo==4.13.0
+fastapi==0.103.2
+uvicorn==0.23.2
+gunicorn==21.2.0
+pymongo==4.6.1
 python-jose[cryptography]==3.3.0
-bcrypt==4.3.0
-pydantic[email]==2.11.4
-python-dotenv==1.1.0
+bcrypt==4.0.2
+pydantic[email]==2.3.0
+python-dotenv==1.0.0
+email-validator==2.1.0
